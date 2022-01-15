@@ -23,6 +23,6 @@ start:
 	@echo "run container."
 	@docker run -d --rm --name httpserver ${HUB}:${TAG}
 
-#通过showip.sh脚本显示容器ip
+#通过showip.sh脚本执行nsenter命令显示容器ip
 show:
 	@bash showip.sh
