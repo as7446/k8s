@@ -49,15 +49,15 @@ kube-scheduler调度分为两个阶段，predicate和priority；
 
 ### Predicates 策略
 
-![image-20220218182633909](C:\Users\pc\AppData\Roaming\Typora\typora-user-images\image-20220218182633909.png)
+![image-20220218182633909](images/image-20220218182633909.png)
 
-![image-20220218182445733](C:\Users\pc\AppData\Roaming\Typora\typora-user-images\image-20220218182445733.png)
+![image-20220218182445733](images/image-20220218182445733.png)
 
 
 
 ### Predicates plugin 工作原理
 
-![image-20220218182814482](C:\Users\pc\AppData\Roaming\Typora\typora-user-images\image-20220218182814482.png)
+![image-20220218182814482](images/image-20220218182814482.png)
 
 
 
