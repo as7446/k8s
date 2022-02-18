@@ -75,3 +75,23 @@ kube-scheduler调度分为两个阶段，predicate和priority；
 * EqualPriority： 将大镜像的容器调度到已经下拉了该镜像的节点上（默认未使用）。
 * MostRequestedPriority： 尽量调度到已经使用过的 Node 上，特别适用于 cluster-autoscaler （默认未使用）。
 
+### CPU资源需求
+
+* CPU
+  * request
+    * kubernetes 调度 Pod 时，会判断当前节点正在运行的 Pod 的 CPU Request 的总和， 再加上当前调度 Pod 的 CPU request，计算其是否超过节点的 CPU 的可分配资源。
+  * limits
+    * 配置 cgroup 以限制资源上限。
+* 内存
+  * request
+    * 判断节点的剩余内存是否满足 Pod 的内存请求量，已确定是否可以将 Pod 调度到改节点和。
+  * limits
+    * 配置 cgroup 以限制资源上限。
+
+
+
+### 磁盘资源需求
+
+容器临时存储（ephermeral storage） 包含日志和可写层数据，可通过定义 Pod Spec 中的 limits.ephemeral-storage 和 requests.ephemeral-storage 来申请。
+
+Pod 调度完成后，计算节点对临时存储的限制不是基于cgroup的，而是由 kubelet 定时获取容器的日志和容器可写层
