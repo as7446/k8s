@@ -19,6 +19,7 @@ func main() {
 
 	flag.Set("v", "4")
 	glog.V(2).Info("starting http server")
+	metrics.Register()
 	mux := http.NewServeMux()
 	mux.HandleFunc("/healthz", healThz)
 	mux.HandleFunc("/", rootHandler)
