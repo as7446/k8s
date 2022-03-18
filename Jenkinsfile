@@ -24,7 +24,7 @@ spec:
         readOnly: true
   - name: maven3
     image: maven:3-alpine
-    command:["/bin/sh","-c","sleep 100000"]
+    command: ["/bin/sh","-c","sleep 100000"]
   volumes:
   - name: docker-secret
     secret:
