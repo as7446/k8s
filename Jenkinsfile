@@ -41,7 +41,7 @@ spec:
     stage('Build with Kaniko') {
       steps {
         container('kaniko') {
-          sh '/kaniko/executor -f `pwd`/golang/httpserver/Dockerfile -c `pwd`/golang/httpserver/src --cache=true \
+          sh '/kaniko/executor -f `pwd`/golang/httpserver/Dockerfile -c `pwd`/golang/httpserver --cache=true \
           --destination=eff4858/httpserver:${DATED_GIT_HASH} \
                   --insecure \
                   --skip-tls-verify  \
