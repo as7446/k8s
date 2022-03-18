@@ -19,13 +19,13 @@ spec:
     - 99999
     tty: true
     volumeMounts:
-      - name: docker-secret
-        mountPath: /kaniko/.docker
+      - name: docker-config
+        mountPath: /kaniko/.docker/
         readOnly: true
   volumes:
-  - name: docker-secret
-    secret:
-      secretName: aliyun-registry
+  - name: docker-config
+    configMap:
+      name: docker-config
 """
     }
   }
@@ -42,7 +42,7 @@ spec:
       steps {
         container('kaniko') {
           sh '/kaniko/executor -f `pwd`/golang/httpserver/Dockerfile -c `pwd`/golang/httpserver/src --cache=true \
-          --destination=registry.cn-beijing.aliyuncs.com/shujiajia//httpserver:${DATED_GIT_HASH} \
+          --destination=eff4858/httpserver:${DATED_GIT_HASH} \
                   --insecure \
                   --skip-tls-verify  \
                   -v=debug'
