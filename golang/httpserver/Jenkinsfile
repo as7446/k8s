@@ -22,6 +22,9 @@ spec:
       - name: docker-secret
         mountPath: /kaniko/.docker
         readOnly: true
+  - name: maven3
+    image: maven:3-alpine
+    command:["/bin/sh","-c","sleep 100000"]
   volumes:
   - name: docker-secret
     secret:
@@ -48,6 +51,13 @@ spec:
                   -v=debug'
         }
       }
-    }  
+    }
+    stage('maven3 build'){
+      steps{
+        container('maven3'){
+          sh 'ls ;`pwd`'
+        }
+      }
+    }
   }
 }
