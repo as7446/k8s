@@ -19,13 +19,16 @@ spec:
     - 99999
     tty: true
     volumeMounts:
-      - name: docker-config
-        mountPath: /kaniko/.docker/
+      - name: docker-secret
+        mountPath: /kaniko/.docker
         readOnly: true
+  - name: maven3
+    image: maven:3-alpine
+    command:["/bin/sh","-c","sleep 100000"]
   volumes:
-  - name: docker-config
-    configMap:
-      name: docker-config
+  - name: docker-secret
+    secret:
+      secretName: aliyun-registry
 """
     }
   }
@@ -41,13 +44,20 @@ spec:
     stage('Build with Kaniko') {
       steps {
         container('kaniko') {
-          sh '/kaniko/executor -f `pwd`/golang/httpserver/Dockerfile -c `pwd`/golang/httpserver --cache=true \
-          --destination=eff4858/httpserver:${DATED_GIT_HASH} \
+          sh '/kaniko/executor -f `pwd`/Dockerfile -c `pwd`/src --cache=true \
+          --destination=registry.cn-beijing.aliyuncs.com/shujiajia//httpserver:${DATED_GIT_HASH} \
                   --insecure \
                   --skip-tls-verify  \
                   -v=debug'
         }
       }
-    }  
+    }
+    stage('maven3 build'){
+      steps{
+        container('maven3'){
+          sh 'ls ;`pwd`'
+        }
+      }
+    }
   }
 }
