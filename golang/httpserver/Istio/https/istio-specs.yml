@@ -1,0 +1,35 @@
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: httpsserver
+spec:
+  gateways:
+    - httpsserver
+  hosts:
+    - httpsserver.istio.shujiajia.com
+  http:
+    - match:
+        - port: 443
+      route:
+        - destination:
+            host: httpserver.securesvc.svc.cluster.local
+            port:
+              number: 80
+---
+apiVersion: networking.istio.io/v1beta1
+kind: Gateway
+metadata:
+  name: httpsserver
+spec:
+  selector:
+    istio: ingressgateway
+  servers:
+    - hosts:
+        - httpsserver.istio.shujiajia.com
+      port:
+        name: https-default
+        number: 443
+        protocol: HTTPS
+      tls:
+        mode: SIMPLE
+        credentialName: httpserver-credential
