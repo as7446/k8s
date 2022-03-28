@@ -1,4 +1,5 @@
 1 安装jaeger
+```
 kubectl apply -f jaeger.yaml
 kubectl edit configmap istio -n istio-system
 set tracing.sampling=100
@@ -10,3 +11,4 @@ kubectl -n tracing apply -f service1-deploy.yaml
 kubectl -n tracing apply -f service2-deploy.yaml
 kubectl apply -f istio-specs.yaml -n tracing
 
+```
