@@ -1,5 +1,4 @@
 #GO parmeters
-#作业步骤都写在了makefile里了。辛苦老师
 
 TAG=1.0
 NAMES=httpserver
