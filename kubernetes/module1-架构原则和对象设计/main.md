@@ -184,3 +184,234 @@ pod里面是实际就是多个容器组成，容器都是通过 Container 的 Ru
 ## 3、深入理解Kubernetes
 
 ## 4、核心对象概览
+
+### 4.1 核心技术概念和 API 对象
+
+API 对象是 Kubernetes集群中的管理操作单元。
+
+Kubernetes 集群系统每支持一项新功能，引入一项新技术，一定会新引入对象的 API 对象，支持对核心功能的管理操作。
+
+每个 API 对象都有四大类属性：
+
+* TypeMeta
+* MetaData 
+* Spec
+* Status
+
+##### 4.1.1 TypeMeta
+
+Kubernetes 对象的最基本定义，它通过引入 GKV （Group、Kind、Version）模型定义了一个对象的模型。
+
+1、Group
+
+Kubernetes 定义了非常多的对象，如何将这些对象进行归类是一门学问，将对象依据其功能范围归入不同的分组，比如把支撑最基本功能的对象归入 core 组，把与应用部署有关的对象归入 apss 组，会使这些对象的可维护性和可理解性更高。
+
+2、Kind
+
+定义一个对象的基本类型，比如 Node、Pod、Deployment等。
+
+3、Version
+
+社区每个季度会推出一个 Kubernetes 版本，随着 Kubernetes 版本的演进，对象从创建之初到能够完全生产化就绪的版本是不断变化的。与软件版本类似，通常社区提出一个模型定义以后，随着该对象不断成熟，其版本可能会从v1alpha1到v1alpha2，或者到v1beta1，最终变成生产就绪版本 v1。
+
+##### 4.1.2 Metata
+
+Metadata 中有两个最重要的属性：Namespace 和 Name ，分别定义了对象的 Namespace 归属名字，这两个属性唯一定义了某个对象实例。
+
+1、Label
+
+顾名思义就是给对象打标签，一个对象可以有任意对标签，其存在形式是键值对。Label 定义了对象的可识别属性， Kubernetes API 支持以 Label 作为过滤条件查询对象。
+
+* Label 是识别 Kubernetes 对象的标签，以 key/value 的方式附加在对象上。
+* key 最长不能超过 63 字节，value 可以为空，也可以是不超过 253 字节的字符串。
+* Label 不提供唯一性，并且实际上经常是很多对象（如 Pods）都使用相同的 label 来标志具体应用。
+* Label 定义好后其他对象可以使用 Label Seletor 来选择一组相同 label 的对象。
+* Label Seletor 支持一下几种方式：
+  * 等式，如 app=nginx 和 env!=production;
+  * 集合，如 env in (production, qa);
+  * 多个 label（它们之间是 AND 关系），如 app=nginx，env=test。
+
+2、Annotation
+
+Annotation 与 Label 一样用键值对来定义，但 Annotation 是作为属性扩展，更多面向对于系统管理员和开发人员，因此需要像其他属性一样做合理归类。
+
+* Annotations 是 key/value 形式附加于对象的注解。
+* 不用于 Labels 用于标志和选择对象，Annotations 则是用来记录一些附加信息，用辅助应用部署、安全策略以及调度策略等。
+* 比如 deployment 使用 annotations 来记录rolling update的状态。
+
+3、Finalizer
+
+Finalizer 本质上是一个资源锁， Kubernetes在接收某个对象删除请求时，会检查 Finalizer 是否为空，如果不为空则只对其做逻辑删除，即只会更新对象中的 metadata.deletionTimestamp 字段。
+
+4、ResourceVersion
+
+ResourceVersion 可以被看作一种乐观锁，每个对象在任意时刻都有其 ResourceVersion， 当 Kubernetes 对象被客户端读取以后，ResourceVersion 信息也被一并读取。此机制确保了分布式系统中任意多线程能够无锁并发访问对象，极大提升了系统的整体效率。
+
+##### 4.1.3 Spec 和 Status
+
+* Spec 和 Status 才是对象的核心。
+* Spec 是用户的期望状态，由创建对象的用户端来定义。
+* Status 是对象的实际状态，由对应的控制器收集实际状态并更新。
+* 与 TypeMeta 和 Metadata 等通用属性不同，Spec 和 Status 是每个对象独有的。
+
+### 4.2 Node
+
+* Node 是 Pod 真正运行的主机，可以物理机，也可以是虚拟机。
+* 为了管理 Pod，每个 Node 节点上至少要运行 container runtime（比如 Docker 或者 Rkt）、Kubelet 和 Kube-proxy 服务
+
+### 4.3 Namespace
+
+Namespace 是对一组资源和对象的抽象集合，比如可以用来将系统内部的对象划分为不同的项目和用户组。
+
+常见的 Pods，servers、replication controllers 和 deployments 等都是属于某一个 Namespace 的（默认是default），而 Node，persistentVolumes 等则不属于任何 Namespace。
+
+### 4.4 什么是 Pod
+
+* Pod 是一组紧密关联的容器集合，它们共享 PID、IPC、Network 和 UTS namespace， 是 Kubernetes 调度的基本单位。
+* Pod 的设计理念是支持多个容器在一个 Pod 共享网络和文件系统，可以通过进程间通信和文件共享这种简单高效的方式组合完成服务。
+* 同一个 Pod 中的不同容器可以共享资源：
+  * 共享网络 Namespace；
+  * 可通过挂在存储卷共享；
+  * 共享 Security Context。
+
+通过 Pod 对象定义支撑应用运行
+
+* 环境变量：
+  * 直接设置值；
+  * 读取 Pod Spec 的某些属性；
+  * 从 ConfigMap 读取某个值；
+  * 从Secret 读取某个值；
+* 存储卷
+  * 通过存储卷可以将外挂存储挂载到 Pod 内部使用。
+  * 存储卷定义包括两个部分： Volume 和 VolumeMouts。
+    * Volume：定义 Pod 可以使用的存储卷来源；
+    * VolumeMouts：定义存储卷如何挂载到容器内部。
+
+* Pod 网络
+
+​		Pod 的多个容器是共享网络 Namespace 的，这意味着：
+
+​		*	同一个 Pod 中的不同容器可以彼此通过 Lookback 地址访问：
+
+​			*	在第一个容器中起了一个服务http://127.0.0.1。
+
+​			*	在第二个容器内，是可以通过 httpGet http://127.0.0.1 访问到该地址。
+
+​		这种方法常用于不同容器的相互协作。
+
+* 资源限制
+
+​	Kubernetes通过 Cgroups 提供容器资源管理的功能，可以限制每个容器的 CPU 和内存使用，比如对于刚才创建的 deployment， 可以通过下面的命令限制 nginx 容器最多只用 50% 的 CPU 和 128MB 的内存：
+
+$ kubectl set resources deployment nginx-app -c=nginx --limits=cpu=50m,memory=128Mi
+
+* 健康检查
+
+  Kubernetes 作为一个面向应用的集群管理工具，需要确保容器在部署后确实处于正常的运行状态。
+
+  1、探针类型：
+
+  * LivenessProbe
+    * 探测应用是否处于健康状态，如果不健康则删除并重新创建容器。
+  * ReadinessProbe
+    * 探测应用是否就绪并且处于正常服务状态，如果不正常则不会接收来自 Kubernetes Service 的流量。
+  * startupProbe 
+    * 探测应用是否启动完成，如果在 failureThreshold*periodSeconds 周期内未就绪，则应用进程会被重启。
+
+  2、探活方式：
+
+  * Exec
+  * TCP socket
+  * HTTP
+
+### 4.5 configMap
+
+* configMap 用来将非机密性的数据保存到键值对中。
+* 使用时， Pod 可以将其用作环境变量、命令行参数或者存储卷中的配置文件。
+* ConfigMap 将环境配置信息和容器镜像解耦，便于应用配置的修改。
+
+### 4.6 密钥对象（secret）
+
+* Secret 是用来保存和传递密码、密钥、认证凭证这些敏感信息的对象。
+* 使用 Secret 的好处是可以避免把敏感信息明文写在配置文件里。
+* Kubernetes 集群中配置和使用服务不可避免的要用到各种敏感信息实现登录、认证登录功能，例如访问 AWS 存储的用户名密码。
+* 为了避免将类似的敏感信息写在所有需要使用的配置文件中，可以将这些信息存储一个 Secret 对象，而在配置文件中通过 Secret 对象引用这些敏感信息。
+* 这种方式的好处包括：意图明确，避免重复，减少暴露机会。
+
+###  4.7 用户（User Account）&服务账户（Service Account）
+
+* 顾名思义，用户账户为人提供账户标识，而服务账户计算进程和 Kubernetes 集群中运行的 Pod 提供账户标识。
+* 用户账户和服务账户的一个区别是作用范围：
+  * 用户账户对应的是人的身份，人的身份与服务的 Namespace 无关，所以用户账户是跨 Namespace 的；
+  * 而服务账户对应的是一个运行中程序的身份，与特定的 Namespace 是相关的。
+
+###  4.8 Service
+
+Service 是应用服务的抽象，通过 Labels 为应用提供负载均衡和服务发现。
+
+匹配 Labels 的 Pod IP 和端口列表组成 ednpoints，由 Kube-proxy 负责将服务 IP 负载均衡到这些 endpoints 上。
+
+每个 Service 都会自动分配一个 CLuser IP （仅在集群内部可以访问的虚拟地址）和 DNS 名，其他容器可以通过该地址或 DNS 来访问服务，而不需要了解后端容器的运行。
+
+### 4.9 副本集（Replica Set）
+
+* Pod 只是单个应用实例的抽象，要构建高可用应用，通常要构建多个同样的副本，提供同一个服务。
+* Kubernetes 为此抽象出副本集 Replicaset， 其允许用户定义 Pod 的副本数量，每个 Pod都会被当做一个无状态的成员进行管理，Kubernetes 保证总是有用户期望的数量的 Pod 正常运行。
+* 当某个副本宕机以后，控制器将会创建一个新的副本。
+* 当因业务负载发生变更而需要调整扩缩容是，可以方便的调整副本数量。
+
+### 4.10 部署（Deployment）
+
+* 部署标识用户对 Kubernetes 集群的一次更新操作。
+* 部署是一个比 RS 应用模式更广的 API 对象，可以是创建一个新的服务，更新一个新的服务，也可以是滚动升级一个服务。
+* 滚动升级一个服务，实际是创建一个新的 RS，然后逐渐将新 RS 中副本数量调整到理想状态，将就 Rs 中的副本数减少到0的复合操作。
+* 这样一个复合操作用一个 RS 是不太好描述的，所以用一个更通用的 Deployment来描述。
+* 以 Kubernetes 的发展方向，未来对所有长期伺服型的业务的管理，都会通过 Deployment 管理。
+
+### 4.11 有状态服务集（StatefulSet）
+
+* 对于 SatefulSet 中的 Pod，每个 Pod 挂载自己独立的存储，如果一个 Pod 出现故障，从其他节点启动一个同样名字的 Pod，要挂载上原来 Pod 的存储继续以它的状态提供服务。
+* 适合于 StatefulSet 的业务包括数据库服务 MySQL 和 PostgreSql，集群化管理服务 Zookeeper、etcd 等有状态服务。
+* 使用 StatefulSet，Pod 仍然可以通过漂移到不同节点提供高可用，而存储也可以通过外挂的存储来提高可靠性，StatefulSet 做的只是将确定的 Pod 与确定的存储关联起来保证状态的连续性。
+
+### 4.12 Statefulset 与 Deployment的差异
+
+* 身份标识
+  * StatefulSet Controller为每个 Pod 编号，序号从 0 开始
+* 数据存储
+  * Statefulset 允许用户定义 volumeClaimTemplate， Pod 被创建的同时，Kubernetes 会以volumeClaimTemplate 中定义的模板创建存储卷，并挂载 Pod。
+* StatefulSet 的升级策略不同
+  * onDelete
+  * 滚动升级
+  * 分片升级
+
+### 4.13 任务（Job）
+
+* Job 是 Kubernetes用来控制批处理型任务的 APi 对象。
+* Job 管理的 Pod 根据用户的设置把任务成功完成后就自动退出。
+* 成功完成的标志根据不同的 spec.complatetions 策略而不同：
+  * 单 Pod 型任务有一个 Pod 成功就标志成功；
+  * 定数成功型任务保证有 N 个任务全部成；
+  * 工作队列型任务根据应用确认的全局成功而标志成功。
+
+### 4.14 后台支撑服务集（DaemonSet）
+
+* 长期伺服型和批处理型服务的核心在业务应用，可能有些节点运行多个同类业务的 Pod，有些节点上又没有这类 Pod 运行；
+* 而后台支撑型服务的核心关注点在 Kubernetes 集群中的节点（物理机或虚拟机），要保证每个节点上都有一个此同类 Pod 运行。
+* 节点可能是所有集群节点也可能是通过 nodeSelector 选定的一些特定节点。
+* 典型的后台支撑型服务包括存储、日志和监控等在每个节点上支撑 Kubernetes 集群运行的服务。
+
+### 4.15 存储 PV 和 PVC
+
+* PersistentVolume（PV）是集群中的一块存储卷，可以由管理员手动设置，或当用户创建 PersistenVolumeClaim（PVC）时根据 StorageClass 动态设置。
+* PV 和 PVC 与 Pod 生命周期无关。也就是说，当 Pod 中的容器重启、重新调度或者删除时，PV 和 PVC 不会受到影响， Pod 存储于 PV 里的数据得以保留。
+* 对于不同的使用场景，用户通常需要不同属性（例如性能、访问模式等）的 PV。
+
+
+
+### 4.16 CustomResourceDefinition 
+
+* CRD 就像数据库的开放式表结构，允许用户自定义 Schema。
+* 有了这种开放式设计，用户可以基于 CRD 定义一些需要的模型，满足不同业务的需求。
+* 社区鼓励基于 CRD 的业务抽象，众多主流的扩展应用都是基于 CRD 构建的，比如 Istio、Knaive。
+* 甚至基于 CRD 推出了 Operator Mode 和 Operator SDK，可以以极低的开发成本定义新对象，并构建新对象的控制器。
