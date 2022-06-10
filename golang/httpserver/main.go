@@ -14,7 +14,7 @@ import (
 	"time"
 )
 
-//辛苦老师辛苦老师
+
 func main() {
 
 	flag.Set("v", "4")
